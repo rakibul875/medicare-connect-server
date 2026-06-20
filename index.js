@@ -33,32 +33,26 @@ async function run() {
       res.send(result);
     });
 
-    //schedule post //Patch // Delete
+    //schedule post//get //Patch // Delete
+    
+    app.get('/schedule', async(req,res)=>{
+      const query={}
+      if(req.query.doctorId){
+        query.doctorId= req.query.doctorId
+      }
+      const cursor= scheduleCollection.find(query)
+      const result = await cursor.toArray()
+      res.send(result)
+    })
 
-    // app.post("/schedule", async (req, res) => {
-    //   const schedule = req.body;
-
-    //   const isExist = await scheduleCollection.findOne({
-    //     doctorId: schedule.doctorId,
-    //     day: schedule.day,
-    //   });
-    //   if(isExist){
-    //     success: false,
-    //     message:'Schedule already exists'
-    //   }
-    //   const result = await scheduleCollection.insertOne(schedule);
-    //   res.send(result);
-    // });
     app.post("/schedule", async (req, res) => {
-      const schedule = req.body; 
+      const schedule = req.body;
 
-      
       const isExist = await scheduleCollection.findOne({
         doctorId: schedule[0]?.doctorId,
         day: schedule[0]?.day,
       });
 
-    
       if (isExist) {
         return res.send({
           success: false,
