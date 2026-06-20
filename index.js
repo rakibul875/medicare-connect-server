@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const dotenv = require("dotenv");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = 8000;
 dotenv.config();
 const uri = process.env.MONGO_DB_URI;
@@ -24,12 +24,49 @@ async function run() {
     const database = client.db("medi-care-connect");
     const userCollection = database.collection("user");
     const doctorCollection = database.collection("doctor");
+    const scheduleCollection = database.collection("schedule");
 
     //user get
     app.get("/users", async (req, res) => {
       const cursor = userCollection.find();
       const result = await cursor.toArray();
       res.send(result);
+    });
+
+    //schedule post //Patch // Delete
+
+    // app.post("/schedule", async (req, res) => {
+    //   const schedule = req.body;
+
+    //   const isExist = await scheduleCollection.findOne({
+    //     doctorId: schedule.doctorId,
+    //     day: schedule.day,
+    //   });
+    //   if(isExist){
+    //     success: false,
+    //     message:'Schedule already exists'
+    //   }
+    //   const result = await scheduleCollection.insertOne(schedule);
+    //   res.send(result);
+    // });
+    app.post("/schedule", async (req, res) => {
+      const schedule = req.body; 
+
+      
+      const isExist = await scheduleCollection.findOne({
+        doctorId: schedule[0]?.doctorId,
+        day: schedule[0]?.day,
+      });
+
+    
+      if (isExist) {
+        return res.send({
+          success: false,
+          message: "Schedule already exists",
+        });
+      }
+      const result = await scheduleCollection.insertMany(schedule);
+      res.send({ success: true, ...result });
     });
 
     //doctor post / get /patch
@@ -41,6 +78,7 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+
     app.get("/my/profile", async (req, res) => {
       const query = {};
 
@@ -55,6 +93,16 @@ async function run() {
         .toArray();
 
       res.send(result[0] || {});
+    });
+
+    app.patch("/doctor/:id", async (req, res) => {
+      const { id } = req.params;
+      const updateData = req.body;
+      const result = await doctorCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updateData },
+      );
+      res.json(result);
     });
 
     app.post("/doctor", async (req, res) => {
