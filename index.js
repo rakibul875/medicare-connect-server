@@ -143,11 +143,19 @@ async function run() {
 
     app.get("/doctor", async (req, res) => {
       const data = req.body;
-
       const cursor = doctorCollection.find(data);
       const result = await cursor.toArray();
       res.send(result);
     });
+
+    app.get('/doctor/:id',async(req,res)=>{
+      const id= req.params.id;
+      const query= {
+        _id: new ObjectId(id)
+      }
+      const result= await doctorCollection.findOne(query)
+      res.send(result)
+    })
 
     app.get("/my/profile", async (req, res) => {
       const query = {};
