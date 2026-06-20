@@ -34,16 +34,92 @@ async function run() {
     });
 
     //schedule post//get //Patch // Delete
-    
-    app.get('/schedule', async(req,res)=>{
-      const query={}
-      if(req.query.doctorId){
-        query.doctorId= req.query.doctorId
+
+    app.get("/schedule", async (req, res) => {
+      const query = {};
+      if (req.query.doctorId) {
+        query.doctorId = req.query.doctorId;
       }
-      const cursor= scheduleCollection.find(query)
-      const result = await cursor.toArray()
-      res.send(result)
-    })
+      const cursor = scheduleCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.delete("/schedule", async (req, res) => {
+      const query = {};
+
+      if (req.query.doctorId) {
+        query.doctorId = req.query.doctorId;
+      }
+      if (req.query.day) {
+        query.day = req.query.day;
+      }
+
+      if (!query.doctorId || !query.day) {
+        return res.status(400).send({
+          success: false,
+          message: "Both doctorId and day are strictly required for deletion!",
+        });
+      }
+
+      const result = await scheduleCollection.deleteOne(query);
+
+      if (result.deletedCount > 0) {
+        res.send({ success: true, message: "Schedule deleted successfully!" });
+      } else {
+        res.send({
+          success: false,
+          message: "No matching schedule found to delete.",
+        });
+      }
+    });
+
+    app.patch("/schedule", async (req, res) => {
+      const query = {};
+
+      if (req.query.doctorId) {
+        query.doctorId = req.query.doctorId;
+      }
+      if (req.query.day) {
+        query.day = req.query.day;
+      }
+
+      if (!query.doctorId || !query.day) {
+        return res
+          .status(400)
+          .send({ success: false, message: "Missing query parameters!" });
+      }
+
+      let updatedData = req.body;    
+      if (Array.isArray(updatedData)) {
+        updatedData = updatedData[0];
+      }
+
+      if (!updatedData || !updatedData.slots) {
+        return res.status(400).send({
+          success: false,
+          message: "Slots data is missing in req.body!",
+        });
+      }
+
+      const updateDoc = {
+        $set: {
+          slots: updatedData.slots,
+          updatedAt: new Date(),
+        },
+      };
+
+      const result = await scheduleCollection.updateOne(query, updateDoc);
+
+      if (result.modifiedCount > 0) {
+        res.send({ success: true, message: "Schedule updated successfully!" });
+      } else {
+        res.send({
+          success: false,
+          message: "No changes made or schedule not found.",
+        });
+      }
+    });
 
     app.post("/schedule", async (req, res) => {
       const schedule = req.body;
