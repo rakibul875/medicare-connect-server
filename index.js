@@ -59,7 +59,7 @@ async function run() {
 
 
     app.post('/subscription',async (req,res)=>{
-      const {amount,doctorId,userId,sessionId}=req.body;
+      const {amount,doctorId,userId,sessionId,doctorName}=req.body;
       const isExist= await subscriptionCollection.findOne({sessionId})
       if(isExist){
         return res.send({message:'Already exist'})
@@ -69,6 +69,7 @@ async function run() {
         sessionId,
         doctorId,
         userId,
+        doctorName,
         paymentAt: new Date()
       })
       res.send(result)
