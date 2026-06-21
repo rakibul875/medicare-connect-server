@@ -36,6 +36,14 @@ async function run() {
 
 
     //subscription post/ get
+
+    app.get('/subscription',async(req,res)=>{
+      const data= req.body
+      const cursor= subscriptionCollection.find(data)
+      const result= await cursor.toArray()
+      res.send(result)
+    })
+
     app.get('/my/subscription',async(req,res)=>{
       const query={}
       if(req.query.userId){
