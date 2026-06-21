@@ -36,6 +36,20 @@ async function run() {
 
 
     //subscription post/ get
+    app.get('/my/subscription',async(req,res)=>{
+      const query={}
+      if(req.query.userId){
+        query.userId=req.query.userId
+      }
+      if(req.query.doctorId){
+        query.doctorId=req.query.doctorId
+      }
+      const cursor= subscriptionCollection.find(query)
+      const result= await cursor.toArray()
+      res.send(result)
+    })
+
+
     app.post('/subscription',async (req,res)=>{
       const {amount,doctorId,userId,sessionId}=req.body;
       const isExist= await subscriptionCollection.findOne({sessionId})
