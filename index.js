@@ -25,6 +25,7 @@ async function run() {
     const userCollection = database.collection("user");
     const doctorCollection = database.collection("doctor");
     const scheduleCollection = database.collection("schedule");
+    const subscriptionCollection= database.collection('subscription')
 
     //user get
     app.get("/users", async (req, res) => {
@@ -32,6 +33,24 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+
+
+    //subscription post/ get
+    app.post('/subscription',async (req,res)=>{
+      const {amount,doctorId,userId,sessionId}=req.body;
+      const isExist= await subscriptionCollection.findOne({sessionId})
+      if(isExist){
+        return res.send({message:'Already exist'})
+      }
+      const result= await subscriptionCollection.insertOne({
+        amount,
+        sessionId,
+        doctorId,
+        userId,
+        paymentAt: new Date()
+      })
+      res.send(result)
+    })
 
     //schedule post//get //Patch // Delete
 
