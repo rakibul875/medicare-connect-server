@@ -37,6 +37,13 @@ async function run() {
 
     //appointment post and get api
 
+    app.get("/appointment/:id", async (req, res) => {
+      const id = req.params;
+      const cursor = appointmentCollection.find({ _id: new ObjectId(id) });
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     app.get("/my/appointment", async (req, res) => {
       const query = {};
       if (req.query.userId) {
@@ -62,7 +69,19 @@ async function run() {
           },
         },
       );
-      res.send(result)
+      res.send(result);
+    });
+    app.patch("/appointment/:id/approve", async (req, res) => {
+      const id = req.params;
+      const result = await appointmentCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            AppointmentStatus: "approve",
+          },
+        },
+      );
+      res.send(result);
     });
 
     app.post("/appointment", async (req, res) => {
