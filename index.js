@@ -39,8 +39,8 @@ async function run() {
 
     app.get("/appointment/:id", async (req, res) => {
       const id = req.params;
-      const cursor = appointmentCollection.find({ _id: new ObjectId(id) });
-      const result = await cursor.toArray();
+      const result = await appointmentCollection.findOne({ _id: new ObjectId(id) });
+      console.log(result)
       res.send(result);
     });
 
@@ -78,6 +78,18 @@ async function run() {
         {
           $set: {
             AppointmentStatus: "approved",
+          },
+        },
+      );
+      res.send(result);
+    });
+    app.patch("/appointment/:id/rejected", async (req, res) => {
+      const id = req.params;
+      const result = await appointmentCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            AppointmentStatus: "rejected",
           },
         },
       );
