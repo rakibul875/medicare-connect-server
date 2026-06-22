@@ -36,6 +36,20 @@ async function run() {
     });
 
     //appointment post and get api
+
+    app.get("/my/appointment", async (req, res) => {
+      const query = {};
+      if (req.query.userId) {
+        query.userId = req.query.userId;
+      }
+      if (req.query.doctorId) {
+        query.doctorId = req.query.doctorId;
+      }
+      const cursor = appointmentCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     app.post("/appointment", async (req, res) => {
       const data = req.body;
       const newData = {
