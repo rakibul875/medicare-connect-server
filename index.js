@@ -25,7 +25,8 @@ async function run() {
     const userCollection = database.collection("user");
     const doctorCollection = database.collection("doctor");
     const scheduleCollection = database.collection("schedule");
-    const subscriptionCollection= database.collection('subscription')
+    const subscriptionCollection = database.collection("subscription");
+    const appointmentCollection = database.collection("appointment");
 
     //user get
     app.get("/users", async (req, res) => {
@@ -34,46 +35,59 @@ async function run() {
       res.send(result);
     });
 
+    //appointment post and get api
+    app.post("/appointment", async (req, res) => {
+      const data = req.body;
+      const newData = {
+        ...data,
+        appointmentAt: new Date(),
+      };
+      const result = await appointmentCollection.insertOne(newData);
+      res.send(result);
+    });
 
     //subscription post/ get
 
-    app.get('/subscription',async(req,res)=>{
-      const data= req.body
-      const cursor= subscriptionCollection.find(data)
-      const result= await cursor.toArray()
-      res.send(result)
-    })
+    app.get("/subscription", async (req, res) => {
+      const data = req.body;
+      const cursor = subscriptionCollection.find(data);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
-    app.get('/my/subscription',async(req,res)=>{
-      const query={}
-      if(req.query.userId){
-        query.userId=req.query.userId
-      }
-      if(req.query.doctorId){
-        query.doctorId=req.query.doctorId
-      }
-      const cursor= subscriptionCollection.find(query)
-      const result= await cursor.toArray()
-      res.send(result)
-    })
+    // await subscriptionCollection.updateMany({ amount: { $type: "string" } }, [
+    //   { $set: { amount: { $toDouble: "$amount" } } },
+    // ]);
 
-
-    app.post('/subscription',async (req,res)=>{
-      const {amount,doctorId,userId,sessionId,doctorName}=req.body;
-      const isExist= await subscriptionCollection.findOne({sessionId})
-      if(isExist){
-        return res.send({message:'Already exist'})
+    app.get("/my/subscription", async (req, res) => {
+      const query = {};
+      if (req.query.userId) {
+        query.userId = req.query.userId;
       }
-      const result= await subscriptionCollection.insertOne({
+      if (req.query.doctorId) {
+        query.doctorId = req.query.doctorId;
+      }
+      const cursor = subscriptionCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.post("/subscription", async (req, res) => {
+      const { amount, doctorId, userId, sessionId, doctorName } = req.body;
+      const isExist = await subscriptionCollection.findOne({ sessionId });
+      if (isExist) {
+        return res.send({ message: "Already exist" });
+      }
+      const result = await subscriptionCollection.insertOne({
         amount,
         sessionId,
         doctorId,
         userId,
         doctorName,
-        paymentAt: new Date()
-      })
-      res.send(result)
-    })
+        paymentAt: new Date(),
+      });
+      res.send(result);
+    });
 
     //schedule post//get //Patch // Delete
 
@@ -132,7 +146,7 @@ async function run() {
           .send({ success: false, message: "Missing query parameters!" });
       }
 
-      let updatedData = req.body;    
+      let updatedData = req.body;
       if (Array.isArray(updatedData)) {
         updatedData = updatedData[0];
       }
@@ -190,14 +204,14 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/doctor/:id',async(req,res)=>{
-      const id= req.params.id;
-      const query= {
-        _id: new ObjectId(id)
-      }
-      const result= await doctorCollection.findOne(query)
-      res.send(result)
-    })
+    app.get("/doctor/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {
+        _id: new ObjectId(id),
+      };
+      const result = await doctorCollection.findOne(query);
+      res.send(result);
+    });
 
     app.get("/my/profile", async (req, res) => {
       const query = {};
