@@ -45,9 +45,24 @@ async function run() {
       if (req.query.doctorId) {
         query.doctorId = req.query.doctorId;
       }
+      if (req.query._id) {
+        query.appointmentId = req.query._id;
+      }
       const cursor = appointmentCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
+    });
+    app.patch("/appointment/:id", async (req, res) => {
+      const id = req.params;
+      const result = await appointmentCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            AppointmentStatus: "cancelled",
+          },
+        },
+      );
+      res.send(result)
     });
 
     app.post("/appointment", async (req, res) => {
