@@ -77,7 +77,7 @@ async function run() {
         { _id: new ObjectId(id) },
         {
           $set: {
-            AppointmentStatus: "approve",
+            AppointmentStatus: "approved",
           },
         },
       );
