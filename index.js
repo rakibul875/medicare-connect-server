@@ -37,6 +37,27 @@ async function run() {
     });
 
     //prescription post//get //patch
+    app.get("/my/prescription", async (req, res) => {
+      const query = {};
+      if (req.query.patientId) {
+        query.patientId = req.query.patientId;
+      }
+      if (req.query.doctorId) {
+        query.doctorId = req.query.doctorId;
+      }
+      const cursor = prescriptionCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get("/prescription/:id", async (req, res) => {
+      const id = req.params;
+      const result = await prescriptionCollection.findOne({
+        _id: new ObjectId(id),
+      });
+      console.log(result)
+      res.send(result);
+    });
 
     app.post("/prescription", async (req, res) => {
       const data = req.body;
@@ -72,7 +93,6 @@ async function run() {
       const result = await appointmentCollection.findOne({
         _id: new ObjectId(id),
       });
-      console.log(result);
       res.send(result);
     });
 
