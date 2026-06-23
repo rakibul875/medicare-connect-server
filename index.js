@@ -27,6 +27,7 @@ async function run() {
     const scheduleCollection = database.collection("schedule");
     const subscriptionCollection = database.collection("subscription");
     const appointmentCollection = database.collection("appointment");
+    const prescriptionCollection = database.collection("prescription");
 
     //user get
     app.get("/users", async (req, res) => {
@@ -35,12 +36,30 @@ async function run() {
       res.send(result);
     });
 
+    //prescription post//get //patch
+
+    app.post("/prescription", async (req, res) => {
+      const data = req.body;
+      const isExist = await prescriptionCollection.findOne({appointmentId:data.appointmentId});
+      if(isExist){
+        return res.send({success:false, message:"Prescription Already Exist"})
+      }
+      const prescriptionData = {
+        ...data,
+        prescriptionAt: new Date(),
+      };
+      const result = await prescriptionCollection.insertOne(prescriptionData);
+      res.send(result);
+    });
+
     //appointment post and get api
 
     app.get("/appointment/:id", async (req, res) => {
       const id = req.params;
-      const result = await appointmentCollection.findOne({ _id: new ObjectId(id) });
-      console.log(result)
+      const result = await appointmentCollection.findOne({
+        _id: new ObjectId(id),
+      });
+      console.log(result);
       res.send(result);
     });
 
@@ -90,6 +109,18 @@ async function run() {
         {
           $set: {
             AppointmentStatus: "rejected",
+          },
+        },
+      );
+      res.send(result);
+    });
+    app.patch("/appointment/:id/confirmed", async (req, res) => {
+      const id = req.params;
+      const result = await appointmentCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            AppointmentStatus: "Confirmed",
           },
         },
       );
