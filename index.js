@@ -120,6 +120,27 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+    app.get("/today/appointment", async (req, res) => {
+      const query = {};
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+
+      const startOfTomorrow = new Date(startOfToday);
+      startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+
+      query.appointmentAt = {
+        $gte: startOfToday,
+        $lt: startOfTomorrow,
+      };
+
+      if (req.query.doctorId) {
+        query.doctorId = req.query.doctorId;
+      }
+
+      const cursor = appointmentCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
     app.patch("/appointment/:id", async (req, res) => {
       const id = req.params;
       const result = await appointmentCollection.updateOne(
