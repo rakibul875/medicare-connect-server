@@ -55,7 +55,16 @@ async function run() {
       const result = await prescriptionCollection.findOne({
         _id: new ObjectId(id),
       });
-      console.log(result)
+      console.log(result);
+      res.send(result);
+    });
+    app.patch("/prescription/:id", async (req, res) => {
+      const { id } = req.params;
+      const updateData = req.body;
+      const result = await prescriptionCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updateData },
+      );
       res.send(result);
     });
 
