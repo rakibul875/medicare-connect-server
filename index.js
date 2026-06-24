@@ -72,7 +72,11 @@ async function run() {
       const result = await cursor.toArray()
       res.send(result)
     })
-
+    app.get('/review/:id',async(req,res)=>{
+      const id= req.params
+      const result= await reviewCollection.findOne({_id: new ObjectId(id)})
+      res.send(result)    
+    })
     app.post("/reviews", async (req, res) => {
       const data = req.body;
       const doctorId = data.doctorId;
