@@ -28,11 +28,41 @@ async function run() {
     const subscriptionCollection = database.collection("subscription");
     const appointmentCollection = database.collection("appointment");
     const prescriptionCollection = database.collection("prescription");
+    const reviewCollection = database.collection("reviews");
 
     //user get
     app.get("/users", async (req, res) => {
       const cursor = userCollection.find();
       const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    //all review get /post /patch
+
+    app.post("/reviews", async (req, res) => {
+      const data = req.body;
+      const doctorId = data.doctorId;
+      const userId = data.userId;
+      const isExist = await reviewCollection.findOne({ doctorId, userId });
+      if (isExist) {
+        return res.send({
+          success: false,
+          message: "You already reviewed this doctor",
+        });
+      }
+      const reviewData = {
+        ...data,
+        createdAt: new Date(),
+      };
+      const result = await reviewCollection.insertOne(reviewData);
+      await appointmentCollection.updateOne(
+        { _id: new ObjectId(data.appointmentId) },
+        {
+          $set: {
+            AppointmentStatus: "reviewed",
+          },
+        },
+      );
       res.send(result);
     });
 
