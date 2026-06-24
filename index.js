@@ -60,6 +60,19 @@ async function run() {
 
     //all review get /post /patch
 
+    app.get('/my/reviews',async(req,res)=>{
+      const query={}
+      if(req.query.userId){
+        query.userId=req.query.userId
+      }
+      if(req.query.doctorId){
+        query.doctorId=req.query.doctorId
+      }
+      const cursor= reviewCollection.find(query)
+      const result = await cursor.toArray()
+      res.send(result)
+    })
+
     app.post("/reviews", async (req, res) => {
       const data = req.body;
       const doctorId = data.doctorId;
