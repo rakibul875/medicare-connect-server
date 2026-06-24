@@ -42,41 +42,52 @@ async function run() {
 
     app.post("/favorite", async (req, res) => {
       const data = req.body;
-      const doctorId= data.doctorId
-      const userId= data.userId
+      const doctorId = data.doctorId;
+      const userId = data.userId;
       const isExist = await favoriteDoctorCollection.findOne({
         doctorId,
         userId,
       });
-      if(isExist){
-          return res.send({
+      if (isExist) {
+        return res.send({
           success: false,
           message: "You already add favorite this doctor",
-        })
+        });
       }
-      const result = await favoriteDoctorCollection.insertOne(data)
-      res.send(result)
+      const result = await favoriteDoctorCollection.insertOne(data);
+      res.send(result);
     });
 
     //all review get /post /patch
 
-    app.get('/my/reviews',async(req,res)=>{
-      const query={}
-      if(req.query.userId){
-        query.userId=req.query.userId
+    app.get("/my/reviews", async (req, res) => {
+      const query = {};
+      if (req.query.userId) {
+        query.userId = req.query.userId;
       }
-      if(req.query.doctorId){
-        query.doctorId=req.query.doctorId
+      if (req.query.doctorId) {
+        query.doctorId = req.query.doctorId;
       }
-      const cursor= reviewCollection.find(query)
-      const result = await cursor.toArray()
-      res.send(result)
-    })
-    app.get('/review/:id',async(req,res)=>{
-      const id= req.params
-      const result= await reviewCollection.findOne({_id: new ObjectId(id)})
-      res.send(result)    
-    })
+      const cursor = reviewCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    app.get("/review/:id", async (req, res) => {
+      const id = req.params;
+      const result = await reviewCollection.findOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
+
+    app.patch("/reviews/:id", async (req, res) => {
+      const { id } = req.params;
+      const updateData = req.body;
+      const result = await reviewCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updateData },
+      );
+      res.send(result);
+    });
+
     app.post("/reviews", async (req, res) => {
       const data = req.body;
       const doctorId = data.doctorId;
@@ -92,7 +103,7 @@ async function run() {
         ...data,
         createdAt: new Date(),
       };
-      const result = await reviewCollection.insertOne(reviewData);         
+      const result = await reviewCollection.insertOne(reviewData);
       res.send(result);
     });
 
