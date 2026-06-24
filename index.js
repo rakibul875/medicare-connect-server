@@ -29,12 +29,33 @@ async function run() {
     const appointmentCollection = database.collection("appointment");
     const prescriptionCollection = database.collection("prescription");
     const reviewCollection = database.collection("reviews");
+    const favoriteDoctorCollection = database.collection("favorite");
 
     //user get
     app.get("/users", async (req, res) => {
       const cursor = userCollection.find();
       const result = await cursor.toArray();
       res.send(result);
+    });
+
+    //favorite//doctor post and get//
+
+    app.post("/favorite", async (req, res) => {
+      const data = req.body;
+      const doctorId= data.doctorId
+      const userId= data.userId
+      const isExist = await favoriteDoctorCollection.findOne({
+        doctorId,
+        userId,
+      });
+      if(isExist){
+          return res.send({
+          success: false,
+          message: "You already add favorite this doctor",
+        })
+      }
+      const result = await favoriteDoctorCollection.insertOne(data)
+      res.send(result)
     });
 
     //all review get /post /patch
@@ -54,15 +75,7 @@ async function run() {
         ...data,
         createdAt: new Date(),
       };
-      const result = await reviewCollection.insertOne(reviewData);
-      await appointmentCollection.updateOne(
-        { _id: new ObjectId(data.appointmentId) },
-        {
-          $set: {
-            AppointmentStatus: "reviewed",
-          },
-        },
-      );
+      const result = await reviewCollection.insertOne(reviewData);         
       res.send(result);
     });
 
