@@ -465,6 +465,21 @@ async function run() {
       res.send(result[0] || {});
     });
 
+    //status update
+    app.patch('/api/doctor/:id',async(req,res)=>{
+      const {id}=req.params
+      const updateDoctor= req.body
+      const filter= {_id:new ObjectId(id)}
+      const updateDoc= {
+        $set:{
+          verificationStatus: updateDoctor.verificationStatus
+        }
+      }
+      const result= await doctorCollection.updateOne(filter,updateDoc)
+      res.send(result)
+    })
+
+
     app.patch("/doctor/:id", async (req, res) => {
       const { id } = req.params;
       const updateData = req.body;
