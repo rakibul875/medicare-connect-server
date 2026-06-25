@@ -33,6 +33,57 @@ async function run() {
 
     //user get
 
+    //// ami na bujar karone support session theke kore nichi 
+
+    app.get("/analytics/top-doctors", async (req, res) => {
+      try {
+        const pipeline = [
+          {
+            $group: {
+              _id: "$doctorId",
+              averageRating: { $avg: "$rating" },
+              totalReviews: { $sum: 1 },
+            },
+          },
+          {
+            $sort: { averageRating: -1 },
+          },
+          {
+            $lookup: {
+              from: "doctor",
+              localField: "_id",
+              foreignField: "doctorId",
+              as: "doctorDetails",
+            },
+          },
+          {
+            $unwind: "$doctorDetails",
+          },
+          {
+            $project: {
+              _id: 0,
+              doctorId: "$_id",
+              averageRating: { $round: ["$averageRating", 1] },
+              totalReviews: 1,
+              doctorName: "$doctorDetails.doctorName",
+              specialization: "$doctorDetails.specialization",
+              hospitalName: "$doctorDetails.hospitalName",
+              profileImage: "$doctorDetails.profileImage",
+            },
+          },
+        ];
+
+        const data = await reviewCollection.aggregate(pipeline).toArray();
+
+        res.send(data);
+      } catch (error) {
+        res.status(500).send({
+          success: false,
+          message: error.message,
+        });
+      }
+    });
+///eiporjon to
     app.get("/users", async (req, res) => {
       const cursor = userCollection.find();
       const result = await cursor.toArray();
