@@ -40,6 +40,17 @@ async function run() {
 
     //favorite//doctor post and get//
 
+
+    app.get('/my/favorite',async(req,res)=>{
+      const query={}
+      if(req.query.userId){
+        query.userId=req.query.userId
+      }
+      const cursor= favoriteDoctorCollection.find(query)
+      const result= await cursor.toArray()
+      res.send(result)
+    })
+
     app.post("/favorite", async (req, res) => {
       const data = req.body;
       const doctorId = data.doctorId;
