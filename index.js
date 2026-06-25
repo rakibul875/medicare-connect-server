@@ -70,6 +70,11 @@ async function run() {
     });
 
     //all review get /post /patch
+    app.get('/reviews',async(req,res)=>{
+      const data=req.body
+      const result= await reviewCollection.find(data).toArray()
+      res.send(result)
+    })
 
     app.get("/my/reviews", async (req, res) => {
       const query = {};
@@ -178,7 +183,11 @@ async function run() {
     });
 
     //appointment post and get api
-
+    app.get('/appointment',async(req,res)=>{
+      const data= req.body
+      const result= await appointmentCollection.find(data).toArray()
+      res.send(result)
+    })
     app.get("/appointment/:id", async (req, res) => {
       const id = req.params;
       const result = await appointmentCollection.findOne({
