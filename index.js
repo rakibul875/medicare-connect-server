@@ -40,16 +40,15 @@ async function run() {
 
     //favorite//doctor post and get//
 
-
-    app.get('/my/favorite',async(req,res)=>{
-      const query={}
-      if(req.query.userId){
-        query.userId=req.query.userId
+    app.get("/my/favorite", async (req, res) => {
+      const query = {};
+      if (req.query.userId) {
+        query.userId = req.query.userId;
       }
-      const cursor= favoriteDoctorCollection.find(query)
-      const result= await cursor.toArray()
-      res.send(result)
-    })
+      const cursor = favoriteDoctorCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
     app.post("/favorite", async (req, res) => {
       const data = req.body;
@@ -70,11 +69,21 @@ async function run() {
     });
 
     //all review get /post /patch
-    app.get('/reviews',async(req,res)=>{
-      const data=req.body
-      const result= await reviewCollection.find(data).toArray()
-      res.send(result)
-    })
+    app.get("/reviews", async (req, res) => {
+      const data = req.body;
+      const result = await reviewCollection.find(data).toArray();
+      res.send(result);
+    });
+
+    app.get("/review", async (req, res) => {
+      const result = await reviewCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .limit(3)
+        .toArray();
+
+      res.send(result);
+    });
 
     app.get("/my/reviews", async (req, res) => {
       const query = {};
@@ -183,11 +192,11 @@ async function run() {
     });
 
     //appointment post and get api
-    app.get('/appointment',async(req,res)=>{
-      const data= req.body
-      const result= await appointmentCollection.find(data).toArray()
-      res.send(result)
-    })
+    app.get("/appointment", async (req, res) => {
+      const data = req.body;
+      const result = await appointmentCollection.find(data).toArray();
+      res.send(result);
+    });
     app.get("/appointment/:id", async (req, res) => {
       const id = req.params;
       const result = await appointmentCollection.findOne({
@@ -449,6 +458,16 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/doctors", async (req, res) => {
+      const result = await doctorCollection
+        .find({ verificationStatus: "approved" })
+        .sort({ createdAt: -1 })
+        .limit(3)
+        .toArray();
+
+      res.send(result);
+    });
+
     app.get("/doctor/:id", async (req, res) => {
       const id = req.params.id;
       const query = {
@@ -475,19 +494,18 @@ async function run() {
     });
 
     //status update
-    app.patch('/api/doctor/:id',async(req,res)=>{
-      const {id}=req.params
-      const updateDoctor= req.body
-      const filter= {_id:new ObjectId(id)}
-      const updateDoc= {
-        $set:{
-          verificationStatus: updateDoctor.verificationStatus
-        }
-      }
-      const result= await doctorCollection.updateOne(filter,updateDoc)
-      res.send(result)
-    })
-
+    app.patch("/api/doctor/:id", async (req, res) => {
+      const { id } = req.params;
+      const updateDoctor = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          verificationStatus: updateDoctor.verificationStatus,
+        },
+      };
+      const result = await doctorCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
 
     app.patch("/doctor/:id", async (req, res) => {
       const { id } = req.params;
