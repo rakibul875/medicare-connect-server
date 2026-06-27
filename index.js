@@ -161,10 +161,13 @@ async function run() {
 
     //favorite//doctor post and get//
 
-    app.get("/my/favorite", async (req, res) => {
+    app.get("/my/favorite",verifyToken,verifyPatientOrDoctor, async (req, res) => {
       const query = {};
       if (req.query.userId) {
         query.userId = req.query.userId;
+         if (req.user._id.toString() !== req.query.userId) {
+            return res.status(403).send({ message: "forbidden access" });
+          }
       }
       const cursor = favoriteDoctorCollection.find(query);
       const result = await cursor.toArray();
@@ -206,52 +209,73 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/my/reviews", async (req, res) => {
-      const query = {};
-      if (req.query.userId) {
-        query.userId = req.query.userId;
-      }
-      if (req.query.doctorId) {
-        query.doctorId = req.query.doctorId;
-      }
-      const cursor = reviewCollection.find(query);
-      const result = await cursor.toArray();
-      res.send(result);
-    });
+    app.get(
+      "/my/reviews",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const query = {};
+        if (req.query.userId) {
+          query.userId = req.query.userId;
+          if (req.user._id.toString() !== req.query.userId) {
+            return res.status(403).send({ message: "forbidden access" });
+          }
+        }
+        if (req.query.doctorId) {
+          query.doctorId = req.query.doctorId;
+          if (req.user._id.toString() !== req.query.doctorId) {
+            return res.status(403).send({ message: "forbidden access" });
+          }
+        }
+        const cursor = reviewCollection.find(query);
+        const result = await cursor.toArray();
+        res.send(result);
+      },
+    );
     app.get("/review/:id", async (req, res) => {
       const id = req.params;
       const result = await reviewCollection.findOne({ _id: new ObjectId(id) });
       res.send(result);
     });
 
-    app.patch("/reviews/:id", async (req, res) => {
-      const { id } = req.params;
-      const updateData = req.body;
-      const result = await reviewCollection.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: updateData },
-      );
-      res.send(result);
-    });
+    app.patch(
+      "/reviews/:id",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const { id } = req.params;
+        const updateData = req.body;
+        const result = await reviewCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updateData },
+        );
+        res.send(result);
+      },
+    );
 
-    app.post("/reviews", async (req, res) => {
-      const data = req.body;
-      const doctorId = data.doctorId;
-      const userId = data.userId;
-      const isExist = await reviewCollection.findOne({ doctorId, userId });
-      if (isExist) {
-        return res.send({
-          success: false,
-          message: "You already reviewed this doctor",
-        });
-      }
-      const reviewData = {
-        ...data,
-        createdAt: new Date(),
-      };
-      const result = await reviewCollection.insertOne(reviewData);
-      res.send(result);
-    });
+    app.post(
+      "/reviews",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const data = req.body;
+        const doctorId = data.doctorId;
+        const userId = data.userId;
+        const isExist = await reviewCollection.findOne({ doctorId, userId });
+        if (isExist) {
+          return res.send({
+            success: false,
+            message: "You already reviewed this doctor",
+          });
+        }
+        const reviewData = {
+          ...data,
+          createdAt: new Date(),
+        };
+        const result = await reviewCollection.insertOne(reviewData);
+        res.send(result);
+      },
+    );
 
     //prescription post//get //patch
     app.get(
@@ -371,28 +395,36 @@ async function run() {
         res.send(result);
       },
     );
-    app.get("/today/appointment", async (req, res) => {
-      const query = {};
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
+    app.get(
+      "/today/appointment",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const query = {};
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
 
-      const startOfTomorrow = new Date(startOfToday);
-      startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+        const startOfTomorrow = new Date(startOfToday);
+        startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
 
-      query.appointmentAt = {
-        $gte: startOfToday,
-        $lt: startOfTomorrow,
-      };
+        query.appointmentAt = {
+          $gte: startOfToday,
+          $lt: startOfTomorrow,
+        };
 
-      if (req.query.doctorId) {
-        query.doctorId = req.query.doctorId;
-      }
+        if (req.query.doctorId) {
+          query.doctorId = req.query.doctorId;
+          if (req.user._id.toString() !== req.query.doctorId) {
+            return res.status(403).send({ message: "forbidden access" });
+          }
+        }
 
-      const cursor = appointmentCollection.find(query);
-      const result = await cursor.toArray();
-      res.send(result);
-    });
-    app.patch("/appointment/:id", async (req, res) => {
+        const cursor = appointmentCollection.find(query);
+        const result = await cursor.toArray();
+        res.send(result);
+      },
+    );
+    app.patch("/appointment/:id",verifyToken,verifyPatientOrDoctor, async (req, res) => {
       const id = req.params;
       const result = await appointmentCollection.updateOne(
         { _id: new ObjectId(id) },
@@ -404,7 +436,7 @@ async function run() {
       );
       res.send(result);
     });
-    app.patch("/appointment/:id/approve", async (req, res) => {
+    app.patch("/appointment/:id/approve",verifyToken,verifyPatientOrDoctor, async (req, res) => {
       const id = req.params;
       const result = await appointmentCollection.updateOne(
         { _id: new ObjectId(id) },
@@ -416,7 +448,7 @@ async function run() {
       );
       res.send(result);
     });
-    app.patch("/appointment/:id/rejected", async (req, res) => {
+    app.patch("/appointment/:id/rejected",verifyToken,verifyPatientOrDoctor, async (req, res) => {
       const id = req.params;
       const result = await appointmentCollection.updateOne(
         { _id: new ObjectId(id) },
@@ -464,18 +496,29 @@ async function run() {
     //   { $set: { amount: { $toDouble: "$amount" } } },
     // ]);
 
-    app.get("/my/subscription", async (req, res) => {
-      const query = {};
-      if (req.query.userId) {
-        query.userId = req.query.userId;
-      }
-      if (req.query.doctorId) {
-        query.doctorId = req.query.doctorId;
-      }
-      const cursor = subscriptionCollection.find(query);
-      const result = await cursor.toArray();
-      res.send(result);
-    });
+    app.get(
+      "/my/subscription",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const query = {};
+        if (req.query.userId) {
+          query.userId = req.query.userId;
+          if (req.user._id.toString() !== req.query.userId) {
+            return res.status(403).send({ message: "forbidden access" });
+          }
+        }
+        if (req.query.doctorId) {
+          query.doctorId = req.query.doctorId;
+          if (req.user._id.toString() !== req.query.doctorId) {
+            return res.status(403).send({ message: "forbidden access" });
+          }
+        }
+        const cursor = subscriptionCollection.find(query);
+        const result = await cursor.toArray();
+        res.send(result);
+      },
+    );
 
     app.post("/subscription", async (req, res) => {
       const { amount, doctorId, userId, sessionId, doctorName } = req.body;
@@ -496,23 +539,15 @@ async function run() {
 
     //schedule post//get //Patch // Delete
 
-    app.get(
-      "/schedule",
-      verifyToken,
-      verifyPatientOrDoctor,
-      async (req, res) => {
-        const query = {};
-        if (req.query.doctorId) {
-          query.doctorId = req.query.doctorId;
-          if (req.user?._id.toString() !== req.query.doctorId) {
-            res.status(403).send({ message: "forbidden access" });
-          }
-        }
-        const cursor = scheduleCollection.find(query);
-        const result = await cursor.toArray();
-        res.send(result);
-      },
-    );
+    app.get("/schedule", async (req, res) => {
+      const query = {};
+      if (req.query.doctorId) {
+        query.doctorId = req.query.doctorId;
+      }
+      const cursor = scheduleCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
     app.delete(
       "/schedule",
@@ -658,23 +693,28 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/my/profile", verifyToken,verifyPatientOrDoctor, async (req, res) => {
-      const query = {};
+    app.get(
+      "/my/profile",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const query = {};
 
-      if (req.query.doctorId) {
-        query.doctorId = req.query.doctorId;
-        if (req.user._id.toString() !== req.query.doctorId) {
+        if (req.query.doctorId) {
+          query.doctorId = req.query.doctorId;
+          if (req.user._id.toString() !== req.query.doctorId) {
+          }
         }
-      }
 
-      const result = await doctorCollection
-        .find(query)
-        .sort({ createdAt: -1 })
-        .limit(1)
-        .toArray();
+        const result = await doctorCollection
+          .find(query)
+          .sort({ createdAt: -1 })
+          .limit(1)
+          .toArray();
 
-      res.send(result[0] || {});
-    });
+        res.send(result[0] || {});
+      },
+    );
 
     //status update
     app.patch(
@@ -696,15 +736,20 @@ async function run() {
       },
     );
 
-    app.patch("/doctor/:id",verifyToken,verifyPatientOrDoctor, async (req, res) => {
-      const { id } = req.params;
-      const updateData = req.body;
-      const result = await doctorCollection.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: updateData },
-      );
-      res.json(result);
-    });
+    app.patch(
+      "/doctor/:id",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const { id } = req.params;
+        const updateData = req.body;
+        const result = await doctorCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updateData },
+        );
+        res.json(result);
+      },
+    );
 
     app.post("/doctor", async (req, res) => {
       const doctor = req.body;
