@@ -134,7 +134,7 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/users/:id", async (req, res) => {
+    app.delete("/users/:id",verifyToken,verifyAdmin, async (req, res) => {
       const { id } = req.params;
 
       const filter = {
@@ -146,7 +146,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/users/:id", async (req, res) => {
+    app.patch("/users/:id",verifyToken,verifyAdmin, async (req, res) => {
       const { id } = req.params;
       const updateUser = req.body;
       const filter = { _id: new ObjectId(id) };
