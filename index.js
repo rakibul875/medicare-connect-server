@@ -18,11 +18,6 @@ const client = new MongoClient(uri, {
 app.use(cors());
 app.use(express.json());
 
-const logger = (req, res, next) => {
-  console.log("logger hit", req.params);
-  next();
-};
-
 async function run() {
   try {
     await client.connect();
@@ -35,20 +30,6 @@ async function run() {
     const prescriptionCollection = database.collection("prescription");
     const reviewCollection = database.collection("reviews");
     const favoriteDoctorCollection = database.collection("favorite");
-
-    //verification related
-
-    const verifyToken = (req, res, next) => {
-      const authorization = req.headers?.authorization;
-      if (!authorization) {
-        return res.status(401).send({ message: "unauthorize access" });
-      }
-      const token = authorization.split(" ")[1];
-      if (!token) {
-        return res.status(401).send({ message: "unauthorize access" });
-      }
-      next();
-    };
 
     //user get
 
@@ -105,6 +86,8 @@ async function run() {
     ///eiporjon to
 
     //searching  get
+
+    
 
     app.get("/users", async (req, res) => {
       const cursor = userCollection.find();
@@ -550,7 +533,7 @@ async function run() {
 
     //doctor post / get /patch
 
-    app.get("/doctor", verifyToken, async (req, res) => {
+    app.get("/doctor", async (req, res) => {
       const data = req.body;
       const cursor = doctorCollection.find(data);
       const result = await cursor.toArray();
@@ -593,7 +576,7 @@ async function run() {
     });
 
     //status update
-    app.patch("/api/doctor/:id", logger, verifyToken, async (req, res) => {
+    app.patch("/api/doctor/:id", async (req, res) => {
       const { id } = req.params;
       const updateDoctor = req.body;
       const filter = { _id: new ObjectId(id) };
