@@ -476,10 +476,13 @@ async function run() {
 
     //schedule post//get //Patch // Delete
 
-    app.get("/schedule", async (req, res) => {
+    app.get("/schedule",verifyToken,verifyPatientOrDoctor, async (req, res) => {
       const query = {};
       if (req.query.doctorId) {
         query.doctorId = req.query.doctorId;
+        if(req.user?._id.toString()!==req.query.doctorId){
+          res.status(403).send({message:'forbidden access'})
+        }
       }
       const cursor = scheduleCollection.find(query);
       const result = await cursor.toArray();
