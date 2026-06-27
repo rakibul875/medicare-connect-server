@@ -56,12 +56,12 @@ async function run() {
       req.user = user;
       next();
     };
-    const verifyAdmin=async(req,res,next)=>{
-      if(req.user?.role!=='admin'){
-        res.status(403).send({message:'Forbidden access'})
+    const verifyAdmin = async (req, res, next) => {
+      if (req.user?.role !== "admin") {
+        res.status(403).send({ message: "Forbidden access" });
       }
-      next()
-    }
+      next();
+    };
     const verifyPatientOrDoctor = (req, res, next) => {
       if (req.user?.role === "patient" || req.user?.role === "doctor") {
         return next();
@@ -134,7 +134,7 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/users/:id",verifyToken,verifyAdmin, async (req, res) => {
+    app.delete("/users/:id", verifyToken, verifyAdmin, async (req, res) => {
       const { id } = req.params;
 
       const filter = {
@@ -146,7 +146,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/users/:id",verifyToken,verifyAdmin, async (req, res) => {
+    app.patch("/users/:id", verifyToken, verifyAdmin, async (req, res) => {
       const { id } = req.params;
       const updateUser = req.body;
       const filter = { _id: new ObjectId(id) };
@@ -254,18 +254,26 @@ async function run() {
     });
 
     //prescription post//get //patch
-    app.get("/my/prescription", async (req, res) => {
-      const query = {};
-      if (req.query.patientId) {
-        query.patientId = req.query.patientId;
-      }
-      if (req.query.doctorId) {
-        query.doctorId = req.query.doctorId;
-      }
-      const cursor = prescriptionCollection.find(query);
-      const result = await cursor.toArray();
-      res.send(result);
-    });
+    app.get(
+      "/my/prescription",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const query = {};
+        if (req.query.patientId) {
+          query.patientId = req.query.patientId;
+        }
+        if (req.query.doctorId) {
+          query.doctorId = req.query.doctorId;
+          if (req.user._id.toString() !== req.query.doctorId) {
+            return res.status(403).send({ message: "forbidden access" });
+          }
+        }
+        const cursor = prescriptionCollection.find(query);
+        const result = await cursor.toArray();
+        res.send(result);
+      },
+    );
 
     app.get("/prescription/:id", async (req, res) => {
       const id = req.params;
@@ -275,17 +283,22 @@ async function run() {
       console.log(result);
       res.send(result);
     });
-    app.patch("/prescription/:id", async (req, res) => {
-      const { id } = req.params;
-      const updateData = req.body;
-      const result = await prescriptionCollection.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: updateData },
-      );
-      res.send(result);
-    });
+    app.patch(
+      "/prescription/:id",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const { id } = req.params;
+        const updateData = req.body;
+        const result = await prescriptionCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updateData },
+        );
+        res.send(result);
+      },
+    );
 
-    app.post("/prescription", async (req, res) => {
+    app.post("/prescription",verifyToken,verifyPatientOrDoctor, async (req, res) => {
       const data = req.body;
       const isExist = await prescriptionCollection.findOne({
         appointmentId: data.appointmentId,
@@ -338,10 +351,12 @@ async function run() {
           if (req.user._id.toString() !== req.query.userId) {
             return res.status(403).send({ message: "forbidden access" });
           }
-          console.log(req.user._id.toString(), req.query.userId);
         }
         if (req.query.doctorId) {
           query.doctorId = req.query.doctorId;
+          if (req.user._id.toString() !== req.query.doctorId) {
+            return res.status(403).send({ message: "forbidden access" });
+          }
         }
         if (req.query._id) {
           query.appointmentId = req.query._id;
@@ -476,112 +491,139 @@ async function run() {
 
     //schedule post//get //Patch // Delete
 
-    app.get("/schedule",verifyToken,verifyPatientOrDoctor, async (req, res) => {
-      const query = {};
-      if (req.query.doctorId) {
-        query.doctorId = req.query.doctorId;
-        if(req.user?._id.toString()!==req.query.doctorId){
-          res.status(403).send({message:'forbidden access'})
+    app.get(
+      "/schedule",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const query = {};
+        if (req.query.doctorId) {
+          query.doctorId = req.query.doctorId;
+          if (req.user?._id.toString() !== req.query.doctorId) {
+            res.status(403).send({ message: "forbidden access" });
+          }
         }
-      }
-      const cursor = scheduleCollection.find(query);
-      const result = await cursor.toArray();
-      res.send(result);
-    });
+        const cursor = scheduleCollection.find(query);
+        const result = await cursor.toArray();
+        res.send(result);
+      },
+    );
 
-    app.delete("/schedule",verifyToken,verifyPatientOrDoctor, async (req, res) => {
-      const query = {};
+    app.delete(
+      "/schedule",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const query = {};
 
-      if (req.query.doctorId) {
-        query.doctorId = req.query.doctorId;
-      }
-      if (req.query.day) {
-        query.day = req.query.day;
-      }
+        if (req.query.doctorId) {
+          query.doctorId = req.query.doctorId;
+        }
+        if (req.query.day) {
+          query.day = req.query.day;
+        }
 
-      if (!query.doctorId || !query.day) {
-        return res.status(400).send({
-          success: false,
-          message: "Both doctorId and day are strictly required for deletion!",
+        if (!query.doctorId || !query.day) {
+          return res.status(400).send({
+            success: false,
+            message:
+              "Both doctorId and day are strictly required for deletion!",
+          });
+        }
+
+        const result = await scheduleCollection.deleteOne(query);
+
+        if (result.deletedCount > 0) {
+          res.send({
+            success: true,
+            message: "Schedule deleted successfully!",
+          });
+        } else {
+          res.send({
+            success: false,
+            message: "No matching schedule found to delete.",
+          });
+        }
+      },
+    );
+
+    app.patch(
+      "/schedule",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const query = {};
+
+        if (req.query.doctorId) {
+          query.doctorId = req.query.doctorId;
+        }
+        if (req.query.day) {
+          query.day = req.query.day;
+        }
+
+        if (!query.doctorId || !query.day) {
+          return res
+            .status(400)
+            .send({ success: false, message: "Missing query parameters!" });
+        }
+
+        let updatedData = req.body;
+        if (Array.isArray(updatedData)) {
+          updatedData = updatedData[0];
+        }
+
+        if (!updatedData || !updatedData.slots) {
+          return res.status(400).send({
+            success: false,
+            message: "Slots data is missing in req.body!",
+          });
+        }
+
+        const updateDoc = {
+          $set: {
+            slots: updatedData.slots,
+            updatedAt: new Date(),
+          },
+        };
+
+        const result = await scheduleCollection.updateOne(query, updateDoc);
+
+        if (result.modifiedCount > 0) {
+          res.send({
+            success: true,
+            message: "Schedule updated successfully!",
+          });
+        } else {
+          res.send({
+            success: false,
+            message: "No changes made or schedule not found.",
+          });
+        }
+      },
+    );
+
+    app.post(
+      "/schedule",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const schedule = req.body;
+
+        const isExist = await scheduleCollection.findOne({
+          doctorId: schedule[0]?.doctorId,
+          day: schedule[0]?.day,
         });
-      }
 
-      const result = await scheduleCollection.deleteOne(query);
-
-      if (result.deletedCount > 0) {
-        res.send({ success: true, message: "Schedule deleted successfully!" });
-      } else {
-        res.send({
-          success: false,
-          message: "No matching schedule found to delete.",
-        });
-      }
-    });
-
-    app.patch("/schedule",verifyToken,verifyPatientOrDoctor, async (req, res) => {
-      const query = {};
-
-      if (req.query.doctorId) {
-        query.doctorId = req.query.doctorId;
-      }
-      if (req.query.day) {
-        query.day = req.query.day;
-      }
-
-      if (!query.doctorId || !query.day) {
-        return res
-          .status(400)
-          .send({ success: false, message: "Missing query parameters!" });
-      }
-
-      let updatedData = req.body;
-      if (Array.isArray(updatedData)) {
-        updatedData = updatedData[0];
-      }
-
-      if (!updatedData || !updatedData.slots) {
-        return res.status(400).send({
-          success: false,
-          message: "Slots data is missing in req.body!",
-        });
-      }
-
-      const updateDoc = {
-        $set: {
-          slots: updatedData.slots,
-          updatedAt: new Date(),
-        },
-      };
-
-      const result = await scheduleCollection.updateOne(query, updateDoc);
-
-      if (result.modifiedCount > 0) {
-        res.send({ success: true, message: "Schedule updated successfully!" });
-      } else {
-        res.send({
-          success: false,
-          message: "No changes made or schedule not found.",
-        });
-      }
-    });
-
-    app.post("/schedule",verifyToken,verifyPatientOrDoctor, async (req, res) => {
-      const schedule = req.body;
-
-      const isExist = await scheduleCollection.findOne({
-        doctorId: schedule[0]?.doctorId,
-        day: schedule[0]?.day,
-      });
-
-      if (isExist) {
-        return res.send({
-          success: false,
-          message: "Schedule already exists",
-        });
-      }
-      const result = await scheduleCollection.insertMany(schedule);
-      res.send({ success: true, ...result });
-    });
+        if (isExist) {
+          return res.send({
+            success: false,
+            message: "Schedule already exists",
+          });
+        }
+        const result = await scheduleCollection.insertMany(schedule);
+        res.send({ success: true, ...result });
+      },
+    );
 
     //doctor post / get /patch
 
@@ -591,7 +633,6 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
-
 
     app.get("/doctors", async (req, res) => {
       const result = await doctorCollection
@@ -629,18 +670,24 @@ async function run() {
     });
 
     //status update
-    app.patch("/api/doctor/:id", logger, verifyToken,verifyAdmin, async (req, res) => {
-      const { id } = req.params;
-      const updateDoctor = req.body;
-      const filter = { _id: new ObjectId(id) };
-      const updateDoc = {
-        $set: {
-          verificationStatus: updateDoctor.verificationStatus,
-        },
-      };
-      const result = await doctorCollection.updateOne(filter, updateDoc);
-      res.send(result);
-    });
+    app.patch(
+      "/api/doctor/:id",
+      logger,
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const { id } = req.params;
+        const updateDoctor = req.body;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            verificationStatus: updateDoctor.verificationStatus,
+          },
+        };
+        const result = await doctorCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      },
+    );
 
     app.patch("/doctor/:id", async (req, res) => {
       const { id } = req.params;
