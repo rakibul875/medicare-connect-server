@@ -76,7 +76,7 @@ async function run() {
 
     //// ami na bujar karone support session theke kore nichi
 
-    app.get("/analytics/top-doctors", async (req, res) => {
+    app.get("/analytics/top-doctors",verifyToken,verifyAdmin, async (req, res) => {
       try {
         const pipeline = [
           {
