@@ -298,32 +298,37 @@ async function run() {
       },
     );
 
-    app.post("/prescription",verifyToken,verifyPatientOrDoctor, async (req, res) => {
-      const data = req.body;
-      const isExist = await prescriptionCollection.findOne({
-        appointmentId: data.appointmentId,
-      });
-      if (isExist) {
-        return res.send({
-          success: false,
-          message: "Prescription Already Exist",
+    app.post(
+      "/prescription",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const data = req.body;
+        const isExist = await prescriptionCollection.findOne({
+          appointmentId: data.appointmentId,
         });
-      }
-      const prescriptionData = {
-        ...data,
-        prescriptionAt: new Date(),
-      };
-      const result = await prescriptionCollection.insertOne(prescriptionData);
-      await appointmentCollection.updateOne(
-        { _id: new ObjectId(data.appointmentId) },
-        {
-          $set: {
-            AppointmentStatus: "confirmed",
+        if (isExist) {
+          return res.send({
+            success: false,
+            message: "Prescription Already Exist",
+          });
+        }
+        const prescriptionData = {
+          ...data,
+          prescriptionAt: new Date(),
+        };
+        const result = await prescriptionCollection.insertOne(prescriptionData);
+        await appointmentCollection.updateOne(
+          { _id: new ObjectId(data.appointmentId) },
+          {
+            $set: {
+              AppointmentStatus: "confirmed",
+            },
           },
-        },
-      );
-      res.send(result);
-    });
+        );
+        res.send(result);
+      },
+    );
 
     //appointment post and get api
     app.get("/appointment", async (req, res) => {
@@ -653,11 +658,13 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/my/profile", async (req, res) => {
+    app.get("/my/profile", verifyToken,verifyPatientOrDoctor, async (req, res) => {
       const query = {};
 
       if (req.query.doctorId) {
         query.doctorId = req.query.doctorId;
+        if (req.user._id.toString() !== req.query.doctorId) {
+        }
       }
 
       const result = await doctorCollection
@@ -689,7 +696,7 @@ async function run() {
       },
     );
 
-    app.patch("/doctor/:id", async (req, res) => {
+    app.patch("/doctor/:id",verifyToken,verifyPatientOrDoctor, async (req, res) => {
       const { id } = req.params;
       const updateData = req.body;
       const result = await doctorCollection.updateOne(
