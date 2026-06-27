@@ -56,19 +56,12 @@ async function run() {
       req.user = user;
       next();
     };
-    // const verifyPatient=async(req,res,next)=>{
-    //   if(req.user?.role!=='patient'){
-    //     res.status(403).send({message:'Forbidden access'})
-    //   }
-    //   next()
-    // }
-    // const verifyDoctor=async(req,res,next)=>{
-    //   if(req.user?.role!=='doctor'){
-    //     res.status(403).send({message:'Forbidden access'})
-    //   }
-    //   next()
-    // }
-
+    const verifyAdmin=async(req,res,next)=>{
+      if(req.user?.role!=='admin'){
+        res.status(403).send({message:'Forbidden access'})
+      }
+      next()
+    }
     const verifyPatientOrDoctor = (req, res, next) => {
       if (req.user?.role === "patient" || req.user?.role === "doctor") {
         return next();
@@ -589,12 +582,13 @@ async function run() {
 
     //doctor post / get /patch
 
-    app.get("/doctor", verifyToken, async (req, res) => {
+    app.get("/doctor", async (req, res) => {
       const data = req.body;
       const cursor = doctorCollection.find(data);
       const result = await cursor.toArray();
       res.send(result);
     });
+
 
     app.get("/doctors", async (req, res) => {
       const result = await doctorCollection
@@ -632,7 +626,7 @@ async function run() {
     });
 
     //status update
-    app.patch("/api/doctor/:id", logger, verifyToken, async (req, res) => {
+    app.patch("/api/doctor/:id", logger, verifyToken,verifyAdmin, async (req, res) => {
       const { id } = req.params;
       const updateDoctor = req.body;
       const filter = { _id: new ObjectId(id) };
