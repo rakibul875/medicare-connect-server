@@ -18,6 +18,11 @@ const client = new MongoClient(uri, {
 app.use(cors());
 app.use(express.json());
 
+const logger = (req, res, next) => {
+  console.log("logger hit", req.params);
+  next();
+};
+
 async function run() {
   try {
     await client.connect();
@@ -30,6 +35,49 @@ async function run() {
     const prescriptionCollection = database.collection("prescription");
     const reviewCollection = database.collection("reviews");
     const favoriteDoctorCollection = database.collection("favorite");
+    const sessionCollection = database.collection("session");
+
+    //verification related
+
+    const verifyToken = async (req, res, next) => {
+      const authorization = req.headers?.authorization;
+      if (!authorization) {
+        return res.status(401).send({ message: "unauthorize access" });
+      }
+      const token = authorization.split(" ")[1];
+      if (!token) {
+        return res.status(401).send({ message: "unauthorize access" });
+      }
+      const query = { token: token };
+      const session = await sessionCollection.findOne(query);
+      const userId = session?.userId;
+      const userQuery = { _id: userId };
+      const user = await userCollection.findOne(userQuery);
+      req.user = user;
+      next();
+    };
+    // const verifyPatient=async(req,res,next)=>{
+    //   if(req.user?.role!=='patient'){
+    //     res.status(403).send({message:'Forbidden access'})
+    //   }
+    //   next()
+    // }
+    // const verifyDoctor=async(req,res,next)=>{
+    //   if(req.user?.role!=='doctor'){
+    //     res.status(403).send({message:'Forbidden access'})
+    //   }
+    //   next()
+    // }
+
+    const verifyPatientOrDoctor = (req, res, next) => {
+      if (req.user?.role === "patient" || req.user?.role === "doctor") {
+        return next();
+      }
+
+      return res.status(403).send({
+        message: "Forbidden access",
+      });
+    };
 
     //user get
 
@@ -86,8 +134,6 @@ async function run() {
     ///eiporjon to
 
     //searching  get
-
-    
 
     app.get("/users", async (req, res) => {
       const cursor = userCollection.find();
@@ -287,21 +333,31 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/my/appointment", async (req, res) => {
-      const query = {};
-      if (req.query.userId) {
-        query.userId = req.query.userId;
-      }
-      if (req.query.doctorId) {
-        query.doctorId = req.query.doctorId;
-      }
-      if (req.query._id) {
-        query.appointmentId = req.query._id;
-      }
-      const cursor = appointmentCollection.find(query);
-      const result = await cursor.toArray();
-      res.send(result);
-    });
+    app.get(
+      "/my/appointment",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const query = {};
+        if (req.query.userId) {
+          query.userId = req.query.userId;
+
+          if (req.user._id.toString() !== req.query.userId) {
+            return res.status(403).send({ message: "forbidden access" });
+          }
+          console.log(req.user._id.toString(), req.query.userId);
+        }
+        if (req.query.doctorId) {
+          query.doctorId = req.query.doctorId;
+        }
+        if (req.query._id) {
+          query.appointmentId = req.query._id;
+        }
+        const cursor = appointmentCollection.find(query);
+        const result = await cursor.toArray();
+        res.send(result);
+      },
+    );
     app.get("/today/appointment", async (req, res) => {
       const query = {};
       const startOfToday = new Date();
@@ -533,7 +589,7 @@ async function run() {
 
     //doctor post / get /patch
 
-    app.get("/doctor", async (req, res) => {
+    app.get("/doctor", verifyToken, async (req, res) => {
       const data = req.body;
       const cursor = doctorCollection.find(data);
       const result = await cursor.toArray();
@@ -576,7 +632,7 @@ async function run() {
     });
 
     //status update
-    app.patch("/api/doctor/:id", async (req, res) => {
+    app.patch("/api/doctor/:id", logger, verifyToken, async (req, res) => {
       const { id } = req.params;
       const updateDoctor = req.body;
       const filter = { _id: new ObjectId(id) };
