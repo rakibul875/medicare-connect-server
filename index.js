@@ -489,7 +489,7 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/schedule", async (req, res) => {
+    app.delete("/schedule",verifyToken,verifyPatientOrDoctor, async (req, res) => {
       const query = {};
 
       if (req.query.doctorId) {
@@ -518,7 +518,7 @@ async function run() {
       }
     });
 
-    app.patch("/schedule", async (req, res) => {
+    app.patch("/schedule",verifyToken,verifyPatientOrDoctor, async (req, res) => {
       const query = {};
 
       if (req.query.doctorId) {
@@ -565,7 +565,7 @@ async function run() {
       }
     });
 
-    app.post("/schedule", async (req, res) => {
+    app.post("/schedule",verifyToken,verifyPatientOrDoctor, async (req, res) => {
       const schedule = req.body;
 
       const isExist = await scheduleCollection.findOne({
