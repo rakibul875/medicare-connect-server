@@ -25,7 +25,7 @@ const logger = (req, res, next) => {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     const database = client.db("medi-care-connect");
     const userCollection = database.collection("user");
     const doctorCollection = database.collection("doctor");
@@ -698,9 +698,8 @@ async function run() {
       res.send(result)
     })
 
-    app.get("/doctor", async (req, res) => {
-      const data = req.body;
-      const cursor = doctorCollection.find(data);
+    app.get("/doctor", async (req, res) => {     
+      const cursor = doctorCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
