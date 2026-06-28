@@ -76,54 +76,59 @@ async function run() {
 
     //// ami na bujar karone support session theke kore nichi
 
-    app.get("/analytics/top-doctors",verifyToken,verifyAdmin, async (req, res) => {
-      try {
-        const pipeline = [
-          {
-            $group: {
-              _id: "$doctorId",
-              averageRating: { $avg: "$rating" },
-              totalReviews: { $sum: 1 },
+    app.get(
+      "/analytics/top-doctors",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        try {
+          const pipeline = [
+            {
+              $group: {
+                _id: "$doctorId",
+                averageRating: { $avg: "$rating" },
+                totalReviews: { $sum: 1 },
+              },
             },
-          },
-          {
-            $sort: { averageRating: -1 },
-          },
-          {
-            $lookup: {
-              from: "doctor",
-              localField: "_id",
-              foreignField: "doctorId",
-              as: "doctorDetails",
+            {
+              $sort: { averageRating: -1 },
             },
-          },
-          {
-            $unwind: "$doctorDetails",
-          },
-          {
-            $project: {
-              _id: 0,
-              doctorId: "$_id",
-              averageRating: { $round: ["$averageRating", 1] },
-              totalReviews: 1,
-              doctorName: "$doctorDetails.doctorName",
-              specialization: "$doctorDetails.specialization",
-              hospitalName: "$doctorDetails.hospitalName",
-              profileImage: "$doctorDetails.profileImage",
+            {
+              $lookup: {
+                from: "doctor",
+                localField: "_id",
+                foreignField: "doctorId",
+                as: "doctorDetails",
+              },
             },
-          },
-        ];
+            {
+              $unwind: "$doctorDetails",
+            },
+            {
+              $project: {
+                _id: 0,
+                doctorId: "$_id",
+                averageRating: { $round: ["$averageRating", 1] },
+                totalReviews: 1,
+                doctorName: "$doctorDetails.doctorName",
+                specialization: "$doctorDetails.specialization",
+                hospitalName: "$doctorDetails.hospitalName",
+                profileImage: "$doctorDetails.profileImage",
+              },
+            },
+          ];
 
-        const data = await reviewCollection.aggregate(pipeline).toArray();
+          const data = await reviewCollection.aggregate(pipeline).toArray();
 
-        res.send(data);
-      } catch (error) {
-        res.status(500).send({
-          success: false,
-          message: error.message,
-        });
-      }
-    });
+          res.send(data);
+        } catch (error) {
+          res.status(500).send({
+            success: false,
+            message: error.message,
+          });
+        }
+      },
+    );
     ///eiporjon to
 
     //searching  get
@@ -161,18 +166,23 @@ async function run() {
 
     //favorite//doctor post and get//
 
-    app.get("/my/favorite",verifyToken,verifyPatientOrDoctor, async (req, res) => {
-      const query = {};
-      if (req.query.userId) {
-        query.userId = req.query.userId;
-         if (req.user._id.toString() !== req.query.userId) {
+    app.get(
+      "/my/favorite",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const query = {};
+        if (req.query.userId) {
+          query.userId = req.query.userId;
+          if (req.user._id.toString() !== req.query.userId) {
             return res.status(403).send({ message: "forbidden access" });
           }
-      }
-      const cursor = favoriteDoctorCollection.find(query);
-      const result = await cursor.toArray();
-      res.send(result);
-    });
+        }
+        const cursor = favoriteDoctorCollection.find(query);
+        const result = await cursor.toArray();
+        res.send(result);
+      },
+    );
 
     app.post("/favorite", async (req, res) => {
       const data = req.body;
@@ -424,42 +434,57 @@ async function run() {
         res.send(result);
       },
     );
-    app.patch("/appointment/:id",verifyToken,verifyPatientOrDoctor, async (req, res) => {
-      const id = req.params;
-      const result = await appointmentCollection.updateOne(
-        { _id: new ObjectId(id) },
-        {
-          $set: {
-            AppointmentStatus: "cancelled",
+    app.patch(
+      "/appointment/:id",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const id = req.params;
+        const result = await appointmentCollection.updateOne(
+          { _id: new ObjectId(id) },
+          {
+            $set: {
+              AppointmentStatus: "cancelled",
+            },
           },
-        },
-      );
-      res.send(result);
-    });
-    app.patch("/appointment/:id/approve",verifyToken,verifyPatientOrDoctor, async (req, res) => {
-      const id = req.params;
-      const result = await appointmentCollection.updateOne(
-        { _id: new ObjectId(id) },
-        {
-          $set: {
-            AppointmentStatus: "approved",
+        );
+        res.send(result);
+      },
+    );
+    app.patch(
+      "/appointment/:id/approve",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const id = req.params;
+        const result = await appointmentCollection.updateOne(
+          { _id: new ObjectId(id) },
+          {
+            $set: {
+              AppointmentStatus: "approved",
+            },
           },
-        },
-      );
-      res.send(result);
-    });
-    app.patch("/appointment/:id/rejected",verifyToken,verifyPatientOrDoctor, async (req, res) => {
-      const id = req.params;
-      const result = await appointmentCollection.updateOne(
-        { _id: new ObjectId(id) },
-        {
-          $set: {
-            AppointmentStatus: "rejected",
+        );
+        res.send(result);
+      },
+    );
+    app.patch(
+      "/appointment/:id/rejected",
+      verifyToken,
+      verifyPatientOrDoctor,
+      async (req, res) => {
+        const id = req.params;
+        const result = await appointmentCollection.updateOne(
+          { _id: new ObjectId(id) },
+          {
+            $set: {
+              AppointmentStatus: "rejected",
+            },
           },
-        },
-      );
-      res.send(result);
-    });
+        );
+        res.send(result);
+      },
+    );
     // app.patch("/appointment/:id/confirmed", async (req, res) => {
     //   const id = req.params;
     //   const result = await appointmentCollection.updateOne(
@@ -666,6 +691,12 @@ async function run() {
     );
 
     //doctor post / get /patch
+    app.get('/all/doctors',async(req,res)=>{
+      const {page=1,limit=3}=req.query
+      const skip=(Number(page)-1)*Number(limit)
+      const result= await doctorCollection.find().skip(skip).limit(Number(limit)).toArray()
+      res.send(result)
+    })
 
     app.get("/doctor", async (req, res) => {
       const data = req.body;
