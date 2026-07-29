@@ -691,18 +691,54 @@ async function run() {
     );
 
     //doctor post / get /patch
-    app.get('/all/doctors',async(req,res)=>{
-      const {page=1,limit=3}=req.query
-      const skip=(Number(page)-1)*Number(limit)
-      const result= await doctorCollection.find().skip(skip).limit(Number(limit)).toArray()
+    app.get('/all/doctors', async (req, res) => {
+      const { page = 1, limit = 3 } = req.query
+      const skip = (Number(page) - 1) * Number(limit)
+      const result = await doctorCollection.find().skip(skip).limit(Number(limit)).toArray()
       res.send(result)
     })
 
-    app.get("/doctor", async (req, res) => {     
-      const cursor = doctorCollection.find();
-      const result = await cursor.toArray();
-      res.send(result);
+    // app.get("/doctor", async (req, res) => {     
+    //   const cursor = doctorCollection.find();
+    //   const result = await cursor.toArray();
+    //   res.send(result);
+    // });
+
+    app.get("/doctor", async (req, res) => {
+      const page = parseInt(req.query.page) || 1;
+      const limit = 10;
+      const skip = (page - 1) * limit;
+      const search = req.query.search || "";
+      const category = req.query.category || "";
+
+
+      let query = {};
+
+      if (search) {
+
+        query.doctorName = { $regex: search, $options: "i" };
+      }
+
+      if (category) {
+
+        query.specialization = category;
+      }
+
+      try {
+        const cursor = doctorCollection.find(query).skip(skip).limit(limit);
+        const result = await cursor.toArray();
+
+        const totalCount = await doctorCollection.countDocuments(query);
+
+        res.send({
+          doctors: result,
+          totalCount: totalCount
+        });
+      } catch (error) {
+        res.status(500).send({ message: "Error fetching doctors", error });
+      }
     });
+
 
     app.get("/doctors", async (req, res) => {
       const result = await doctorCollection
