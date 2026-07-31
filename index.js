@@ -698,11 +698,11 @@ async function run() {
       res.send(result)
     })
 
-    // app.get("/doctor", async (req, res) => {     
-    //   const cursor = doctorCollection.find();
-    //   const result = await cursor.toArray();
-    //   res.send(result);
-    // });
+    app.get("/auth/all/doctors", async (req, res) => {
+      const cursor = doctorCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
     app.get("/doctor", async (req, res) => {
       const page = parseInt(req.query.page) || 1;
