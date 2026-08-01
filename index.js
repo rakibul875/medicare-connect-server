@@ -691,13 +691,6 @@ async function run() {
     );
 
     //doctor post / get /patch
-    app.get('/all/doctors', async (req, res) => {
-      const { page = 1, limit = 3 } = req.query
-      const skip = (Number(page) - 1) * Number(limit)
-      const result = await doctorCollection.find().skip(skip).limit(Number(limit)).toArray()
-      res.send(result)
-    })
-
     app.get("/auth/all/doctors", async (req, res) => {
       const cursor = doctorCollection.find();
       const result = await cursor.toArray();
